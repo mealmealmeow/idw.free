@@ -2046,35 +2046,40 @@
     </div>
 
     <main>
-<!-- ==================== 第零頁：儀表板 (Dashboard) ==================== -->
 <div id="page0" class="page-content">
   <div class="overview-container">
-    <div class="page-header">
-      <!-- 顯示歡迎訊息 -->
-      <h2>👋 早晨，<span id="dashboard-user-name">老師</span></h2>
-      <!-- 快速建立新專案按鈕 -->
-      <button class="action-btn" onclick="startNewProject()">＋ 建立新批改專案</button>
+    
+    <!-- 1. 新設計的標題區 -->
+    <div class="dashboard-header-wrapper">
+      <div class="dashboard-welcome">
+        <h2>👋 早晨，<span id="dashboard-user-name">老師</span></h2>
+        <div class="subtitle">準備好開始今天的批改工作了嗎？</div>
+      </div>
+      <button class="action-btn" onclick="startNewProject()">
+        <span style="font-size:1.1em; margin-right:4px;">＋</span> 建立新專案
+      </button>
     </div>
 
-    <!-- 1. 待辦事項 (最近專案卡片) -->
-    <div class="section-box" style="background: transparent; padding-left:0; padding-right:0; border:none;">
-      <h3 style="margin-bottom: 1rem;">📌 待辦事項 / 最近專案</h3>
+    <!-- 2. 待辦事項 (Grid) -->
+    <div style="margin-bottom: 2rem;">
+      <h3 style="border:none; margin-bottom:1rem; font-size:1.3rem;">📌 最近專案</h3>
       <div id="dashboard-recent-projects" class="dashboard-grid">
-        <div class="empty-state-message">正在讀取雲端資料...</div>
+        <div class="empty-dashboard">正在讀取雲端資料...</div>
       </div>
     </div>
 
-    <!-- 2. 班級概況 (Chart.js 圖表) -->
-    <div class="section-box">
-      <h3>📊 各班平均分比較</h3>
-      <div style="position: relative; height: 300px; width: 100%;">
-        <canvas id="dashboardChartCanvas"></canvas>
+    <!-- 3. 班級概況 (Chart) -->
+    <div>
+      <h3 style="border:none; margin-bottom:1rem; font-size:1.3rem;">📊 班級表現概覽</h3>
+      <div class="chart-container-card">
+        <div style="position: relative; height: 320px; width: 100%;">
+          <canvas id="dashboardChartCanvas"></canvas>
+        </div>
       </div>
     </div>
+
   </div>
 </div>
-
-
       <!-- ==================== 第一頁：基本設定 (新) ==================== -->
       <div id="page1" class="page-content active">
         <div class="section-box">
@@ -6448,48 +6453,62 @@ async function loadDashboard() {
 }
 
 // 2. 渲染卡片
+// 2. 渲染 Dashboard 卡片 (新設計版)
 function renderDashboardCards(projects) {
   const container = document.getElementById('dashboard-recent-projects');
+  if(!container) return;
+  
   container.innerHTML = '';
 
   if (!projects || projects.length === 0) {
-    container.innerHTML = '<div class="empty-state-message">尚未有批改記錄。點擊右上角「建立新批改專案」開始吧！</div>';
+    container.innerHTML = `
+      <div class="empty-dashboard">
+        <div style="font-size:3rem; margin-bottom:1rem;">📭</div>
+        <p>尚未有批改記錄。</p>
+        <button class="light-btn" onclick="startNewProject()" style="margin-top:1rem;">建立第一個專案</button>
+      </div>`;
     return;
   }
 
   projects.forEach(p => {
-    // 防止除以零
+    // 數據處理
     const total = p.total_students || 0;
     const graded = p.graded_count || 0;
     const percentage = total > 0 ? Math.round((graded / total) * 100) : 0;
-    const dateStr = new Date(p.updated_at).toLocaleDateString('zh-HK');
+    const date = new Date(p.updated_at);
+    // 格式化日期： 12月02日
+    const dateStr = `${date.getMonth()+1}月${date.getDate()}日`;
+    
     const className = p.class_name || '未命名班別';
     const topic = p.topic || '未命名題目';
 
     const card = document.createElement('div');
     card.className = 'project-card';
+    
+    // 注入 HTML
     card.innerHTML = `
-      <div>
-        <div class="card-header">
-          <div class="card-class-name">${escapeHtml(className)}</div>
-          <div class="card-date">${dateStr}</div>
+      <div class="card-top">
+        <span class="card-badge">${escapeHtml(className)}</span>
+        <span class="card-date">${dateStr} 最後編輯</span>
+      </div>
+      
+      <div class="card-title">${escapeHtml(topic)}</div>
+      
+      <div class="card-progress-section">
+        <div class="card-progress-info">
+          <span>已改 <b>${graded}</b> / ${total}</span>
+          <span style="color:var(--accent-color); font-weight:bold;">${percentage}%</span>
         </div>
-        <div class="card-topic">📄 ${escapeHtml(topic)}</div>
-        
-        <div class="card-progress-container">
-          <div class="card-progress-track">
-            <div class="card-progress-fill" style="width: ${percentage}%"></div>
-          </div>
-          <div class="card-stats">
-            <span>已改：${graded} / ${total}</span>
-            <span>${percentage}%</span>
-          </div>
+        <div class="card-progress-track">
+          <div class="card-progress-fill" style="width: ${percentage}%"></div>
         </div>
       </div>
       
-      <button class="resume-btn" onclick="resumeProject('${p.id}', ${p.last_student_index})">
-        繼續批改 ➜
-      </button>
+      <div class="card-action">
+        <button class="resume-btn" onclick="resumeProject('${p.id}', ${p.last_student_index})">
+          繼續批改 ➜
+        </button>
+      </div>
     `;
     container.appendChild(card);
   });
