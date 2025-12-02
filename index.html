@@ -2030,6 +2030,9 @@
         </div>
       </header>
       <nav class="page-nav">
+        <nav class="page-nav">
+  <!-- 新增這一行 -->
+  <button id="nav-page0" class="nav-btn" onclick="showPage('page0')" style="display:none">儀表板</button>
         <button id="nav-page1" class="nav-btn active" onclick="showPage('page1')">基本設定</button>
         <button id="nav-page2" class="nav-btn" onclick="showPage('page2')">批改頁</button>
         <button id="nav-page3" class="nav-btn" onclick="showPage('page3')">評語總覽與修訂</button>
@@ -2752,23 +2755,58 @@ function updateHeaderInfo() {
 // --- Supabase 核心功能 ---
 
 async function checkUser() {
+  // 1. 檢查當前 Session
   const { data: { session } } = await supabaseClient.auth.getSession();
   currentUser = session ? session.user : null;
-  updateUIBasedOnAuthState();
   
+  updateUIBasedOnAuthState(); // 更新登入/登出按鈕狀態
+  
+  // 2. 控制頁面跳轉及導航按鈕
+  const dashboardNavBtn = document.getElementById('nav-page0');
+
   if (currentUser) {
-    // 如果已登入
-    loadDataFromCloud(); // 載入評語庫
-    loadDashboard();     // ★★★ 新增：載入並顯示 Dashboard
+    // === 已登入 ===
+    if(dashboardNavBtn) dashboardNavBtn.style.display = 'inline-block'; // 顯示 Dashboard 按鈕
     
-    // 注意：原本可能是 showPage('page1')，現在不用了，因為 loadDashboard 裡會 showPage('page0')
+    loadDataFromCloud(); // 載入評語庫
+    loadDashboard();     // 載入並顯示 Dashboard (這裏會自動 showPage('page0'))
   } else {
-    // 未登入，顯示 Landing 或 Page1
+    // === 未登入 ===
+    if(dashboardNavBtn) dashboardNavBtn.style.display = 'none'; // 隱藏 Dashboard 按鈕
+    
     renderCommonTypoList();
-    showPage('page1'); 
+    showPage('page1');   // ★★★ 關鍵：強制跳轉到基本設定頁，避免白畫面
   }
   
-  // ... (onAuthStateChange 部分同理) ...
+  // 3. 監聽登入狀態改變
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    currentUser = session ? session.user : null;
+    updateUIBasedOnAuthState();
+    
+    const navBtn = document.getElementById('nav-page0');
+
+    if (event === 'SIGNED_IN') {
+      if(navBtn) navBtn.style.display = 'inline-block';
+      loadDataFromCloud();
+      loadDashboard();
+    } else if (event === 'SIGNED_OUT') {
+      if(navBtn) navBtn.style.display = 'none';
+      
+      // 清理資料
+      sessionStorage.removeItem('projectPromptShownThisSession');
+      commonTypos = [];
+      allStudentRecords = [];
+      resetToDefaultCritiques(false);
+      buildChecklist();
+      buildOverviewPage();
+      renderCommonTypoList();
+      renderStudentOverviewTable();
+      clearAllCore();
+      
+      alert("已登出。");
+      showPage('page1'); // 登出後踢回 Page 1
+    }
+  });
 }
 
 async function handleLogin() {
