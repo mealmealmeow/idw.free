@@ -4694,8 +4694,8 @@ async function promptAndLoadCloudProject() {
                     
                     // 視覺區分新舊
                     const badge = p.type === 'legacy' 
-                        ? '<span style="background:#eee; color:#666; font-size:0.7em; padding:2px 4px; border-radius:4px;">🍃</span>' 
-                        : '<span style="background:#e0f2f1; color:#00695c; font-size:0.7em; padding:2px 4px; border-radius:4px;">☁️</span>';
+                        ? '<span style="background:#eee; color:#666; font-size:0.7em; padding:2px 4px; border-radius:4px;">舊版</span>' 
+                        : '<span style="background:#e0f2f1; color:#00695c; font-size:0.7em; padding:2px 4px; border-radius:4px;">新版</span>';
 
                     div.innerHTML = `<strong>${index + 1}.</strong> ${badge} ${escapeHtmlAttr(p.className)} - ${escapeHtmlAttr(p.title)} <span style="font-size:0.8em;color:#999">(${dateStr})</span>`;
                     
@@ -11431,5 +11431,8 @@ function scrollToTop() {
 
 <!-- [v12.2] Back To Top (確保在最外層，不受干擾) -->
 <button id="back-to-top-btn" onclick="scrollToTop()" title="回到頂部" style="display: none;">⬆</button>
+</body>
+</html>
+
 </body>
 </html>
